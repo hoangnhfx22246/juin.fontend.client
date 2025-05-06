@@ -10,14 +10,12 @@ import {
 } from "react-icons/fi";
 import NavigationUser from "../Auth/NavigationUser";
 import { useDispatch, useSelector } from "react-redux";
-import { showNotification } from "../../util/notification";
-import { getCategories } from "../../redux/categorySlice";
+import { getCategoriesWithChildren } from "../../redux/categorySlice";
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const { categories } = useSelector((state) => state.category); // get categories from redux store
-  const [isFetched, setIsFetched] = useState(false);
+  const { categories } = useSelector((state) => state.category); // Lấy danh mục cha từ Redux store
   const dispatch = useDispatch();
 
   const navRef = useRef(null);
@@ -35,11 +33,8 @@ const Navigation = () => {
   }, []);
   // fetching categories from redux store
   useEffect(() => {
-    if (!isFetched) {
-      dispatch(getCategories());
-      setIsFetched(true);
-    }
-  }, [categories, dispatch, isFetched]);
+    dispatch(getCategoriesWithChildren());
+  }, [dispatch]);
 
   const navigationItems = [
     {
@@ -54,13 +49,14 @@ const Navigation = () => {
       name: "Sản phẩm",
       path: "/products",
       children: [
-        {
-          name: "Air Conditioners",
-          path: "/category/climate/air-conditioners",
-        },
-        { name: "Heaters", path: "/category/climate/heaters" },
-        { name: "Air Purifiers", path: "/category/climate/air-purifiers" },
-        { name: "Fans", path: "/category/climate/fans" },
+        ...categories.map((cat) => ({
+          name: cat.name,
+          path: `/category/${cat.slug || cat._id}`,
+          children: cat.subCategories?.map((sub) => ({
+            name: sub.name,
+            path: `/category/${sub.slug || sub._id}`,
+          })),
+        })),
       ],
     },
     {
@@ -72,6 +68,7 @@ const Navigation = () => {
       path: "/category/small-appliances",
     },
   ];
+
   // Add this function to handle auth button clicks
 
   const SearchDropdown = () => (
@@ -170,12 +167,9 @@ const Navigation = () => {
 
   return (
     <>
-      <nav
-        className="bg-white shadow-md relative z-50 sticky top-0 z-50"
-        ref={navRef}
-      >
+      <nav className="bg-white shadow-md sticky top-0 z-50" ref={navRef}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between h-16 relative">
             <Link to="/" className="flex items-center">
               <span className="text-4xl font-bold bg-gradient-green text-transparent bg-clip-text">
                 Juin
@@ -186,9 +180,9 @@ const Navigation = () => {
               {navigationItems.map((item) => (
                 <div
                   key={item.name}
-                  className="relative"
                   onMouseEnter={() => setActiveDropdown(item.name)}
                   onMouseLeave={() => setActiveDropdown(null)}
+                  className="h-full flex items-center"
                 >
                   <Link
                     to={item.path}
@@ -208,15 +202,33 @@ const Navigation = () => {
 
                   {item.children?.length > 0 &&
                     activeDropdown === item.name && (
-                      <div className="absolute top-full left-0 w-48 bg-white shadow-lg rounded-lg py-2 z-10">
+                      <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg py-2 z-10 grid gap-x-2 grid-cols-5">
                         {item.children.map((child) => (
-                          <Link
-                            key={child.name}
-                            to={child.path}
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            {child.name}
-                          </Link>
+                          <div key={child.name}>
+                            <Link
+                              to={child.path}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:text-green-600 font-bold uppercase"
+                            >
+                              {child.name}
+                            </Link>
+
+                            <ul>
+                              {child.children?.length > 0 && (
+                                <ul className="ml-4">
+                                  {child.children.map((subChild) => (
+                                    <li key={subChild.name}>
+                                      <Link
+                                        to={subChild.path}
+                                        className="block py-2 text-xs text-gray-500 hover:text-green-600"
+                                      >
+                                        {subChild.name}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </ul>
+                          </div>
                         ))}
                       </div>
                     )}

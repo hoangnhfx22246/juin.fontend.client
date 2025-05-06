@@ -155,16 +155,12 @@ const FlashSale = () => {
   };
 
   const handleMouseDown = (e) => {
-    console.log("MouseDown");
-
     setIsDragging(true);
     setStartX(e.pageX - sliderRef.current.offsetLeft);
     setScrollLeft(sliderRef.current.scrollLeft);
   };
 
   const handleMouseMove = (e) => {
-    console.log("MouseMove");
-
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - sliderRef.current.offsetLeft;
@@ -173,8 +169,6 @@ const FlashSale = () => {
   };
 
   const handleMouseUp = () => {
-    console.log("MouseUp");
-
     setIsDragging(false);
   };
 

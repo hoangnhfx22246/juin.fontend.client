@@ -15,7 +15,7 @@ export const registerUserAPI = async (formData) => {
 export const loginUserAPI = async (formData) => {
   await getCsrfToken(); // Lấy token CSRF từ server khi đăng nhập
 
-  const res = await axiosPublic.post("/api/auth/login", formData, {
+  const res = await axiosPublic.post("/api/auth/login?type=user", formData, {
     // Để cookie được gửi đi và nhận về từ server
     withCredentials: true, //cookie sẽ được gửi hoặc nhận về
   });

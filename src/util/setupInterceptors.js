@@ -1,3 +1,5 @@
+import { updateAccessToken } from "../redux/authSlice";
+
 let storeInstance = null;
 // Biến này sẽ chứa Redux store, ban đầu là null — sẽ gán khi injectStore được gọi.
 
@@ -38,38 +40,34 @@ const setupInterceptors = (axiosInstance) => {
         // Nếu lỗi là 401 và request chưa retry lần nào -> đánh dấu sẽ retry 1 lần.
 
         try {
-          if (!isRefreshing) {
-            isRefreshing = true;
-            // Nếu chưa có ai đang refresh token thì bắt đầu refresh.
-
-            const res = await axiosInstance.post("/api/auth/refresh-token");
-            const newAccessToken = res.data.accessToken;
-            // Gọi API refresh-token và lấy accessToken mới.
-
-            storeInstance.dispatch({
-              type: "auth/loginUser/fulfilled",
-              payload: {
-                user: storeInstance.getState().auth.currentUser,
-                accessToken: newAccessToken,
-              },
-            });
-            // Dispatch action vào Redux để cập nhật accessToken mới.
-
-            onRefreshed(newAccessToken);
-            // Gọi lại tất cả các request cũ đang đợi token mới.
-
-            isRefreshing = false;
-            // Reset lại trạng thái, cho phép lần sau có thể refresh tiếp.
-          }
-
-          return new Promise((resolve) => {
+          const retryOriginalRequest = new Promise((resolve, reject) => {
             subscribeTokenRefresh((token) => {
-              originalRequest.headers["Authorization"] = `Bearer ${token}`;
-              // Khi có token mới, gắn vào header Authorization.
-              resolve(axiosInstance(originalRequest));
-              // Gửi lại request cũ với token mới.
+              try {
+                originalRequest.headers["Authorization"] = `Bearer ${token}`;
+                resolve(axiosInstance(originalRequest));
+              } catch (err) {
+                reject(err);
+              }
             });
           });
+
+          if (!isRefreshing) {
+            isRefreshing = true;
+
+            try {
+              const res = await axiosInstance.post("/api/auth/refresh-token");
+              const newAccessToken = res.data.accessToken;
+              storeInstance.dispatch(updateAccessToken(newAccessToken));
+              onRefreshed(newAccessToken);
+            } catch (err) {
+              storeInstance.dispatch({ type: "auth/logoutUser/fulfilled" });
+              return Promise.reject(err);
+            } finally {
+              isRefreshing = false;
+            }
+          }
+
+          return retryOriginalRequest;
         } catch (err) {
           isRefreshing = false;
           // Nếu refresh token thất bại, reset cờ isRefreshing.

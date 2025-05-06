@@ -7,7 +7,6 @@ export default function Root() {
   return (
     <>
       <div className="min-h-screen text-green-950 font-sans">
-        <Toaster richColors closeButton />
         <Navigation />
         <Outlet />
         <Footer />

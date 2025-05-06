@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { loginUserAPI, logoutUserAPI, registerUserAPI } from "../api/auth"; // Import API loginUser từ userApi
-import { showNotification } from "../util/notification"; // Import hàm thông báo từ util
 
 // 👉 Thunk để gọi API register
 export const registerUser = createAsyncThunk(
@@ -25,6 +24,7 @@ export const loginUser = createAsyncThunk(
   async (formData, thunkAPI) => {
     try {
       const response = await loginUserAPI(formData); // 👈 Phải dùng await
+
       return response; // Trả về dữ liệu từ API (user + token)
     } catch (err) {
       // Có thể là err.response.data nếu dùng axios
@@ -65,6 +65,10 @@ const authSlice = createSlice({
     setCurrentUser: (state, action) => {
       state.currentUser = action.payload;
       localStorage.setItem("currentUser", JSON.stringify(action.payload));
+    },
+    updateAccessToken: (state, action) => {
+      state.accessToken = action.payload;
+      localStorage.setItem("accessToken", JSON.stringify(action.payload));
     },
   },
   extraReducers: (builder) => {
@@ -132,5 +136,5 @@ const authSlice = createSlice({
       });
   },
 });
-export const { setCurrentUser } = authSlice.actions; // Xuất action setCurrentUser
+export const { setCurrentUser, updateAccessToken } = authSlice.actions; // Xuất action setCurrentUser
 export default authSlice.reducer;
